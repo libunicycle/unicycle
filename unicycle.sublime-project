@@ -1,0 +1,11 @@
+{
+	"folders":
+	[
+		{
+			"path": ".",
+			"name": "Unicycle",
+			"file_exclude_patterns": ["arch/x86/*.o32", ".tags", ".tags_sorted_by_file"],
+			"folder_exclude_patterns": ["out"]
+		}
+	]
+}

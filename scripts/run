@@ -1,0 +1,178 @@
+#!/usr/bin/ruby
+
+require "optparse"
+require "fileutils"
+require "etc"
+require "digest"
+
+DISKFILE = "disk.raw"
+
+def current_os
+  case RUBY_PLATFORM
+  when /linux/i
+    :linux
+  when /darwin/i
+    :macosx
+  else
+    :unknown
+  end
+end
+
+# returns the first argument that is enabled in the config file, nil otherwise
+def config_enabled(*options)
+  config = File.readlines(".config")
+  for option in options
+    return option if config.any? { |l| l == "#{option}=y\n" }
+  end
+
+  return nil
+end
+
+options = {}
+OptionParser.new do |opts|
+  opts.banner = "Runs built Unicycle application with QEMU emulator.\nUsage: run [options]"
+
+  opts.on("-bNAME", "--bootloader=NAME", "Bootloader type") do |b|
+    # currently supported 'uniboot' and 'uefi'
+    options[:bootloader] = b
+  end
+
+  opts.on("-dNAME", "--disk=NAME", "Disk interface") do |n|
+    options[:disk] = n
+  end
+
+  opts.on("-nNAME", "--network=NAME", "Network interface") do |n|
+    options[:network] = n
+  end
+
+  opts.on("-hHOSTNAME", "--host=HOSTNAME", "Network host name") do |h|
+    options[:host] = h
+  end
+
+  opts.on("", "--tap", "Use tup/tap network driver") do
+    options[:network_tap] = true
+  end
+
+  opts.on("-v", "--verbose", "Verbose script output") do |v|
+    options[:verbose] = v
+  end
+end.parse!
+
+options[:disk] ||= "virtio"
+options[:network] ||= "e1000"
+options[:host] ||= "unicycle"
+options[:bootloader] ||= "uniboot"
+
+# qemu args
+args = []
+
+cpu = ""
+case current_os
+when :linux
+  cpu = "-enable-kvm -cpu host"
+when :macosx
+  cpu = "-cpu max"
+else
+  raise "Unknown OS"
+end
+
+args << cpu + ",+x2apic,+pdpe1gb"
+args << "-smp 4"
+args << "-serial stdio"
+args << "-gdb tcp::1234"
+args << "--no-reboot"
+args << "-display none"
+
+unless File.exists?(DISKFILE)
+  `qemu-img create -f raw #{DISKFILE} 100M`
+end
+
+if options[:disk] != "none"
+  disk = case options[:disk]
+    when "virtio"
+      "-device virtio-blk-pci,disable-legacy=on,drive=drive0"
+    when "ahci"
+      "-device ich9-ahci,id=ahci -device ide-drive,drive=drive0,bus=ahci.0"
+    else
+      raise "Expect -d (disk interface) one of the following values: none, virtio, ahci"
+    end
+  args << "-drive if=none,id=drive0,format=raw,file=#{DISKFILE} #{disk}"
+end
+
+user = Etc.getlogin
+
+if options[:network] == "none"
+  args << "-net none"
+else
+  mac = ""
+  if options[:network_tap]
+    sha1 = Digest::SHA1.new
+    sha1 << options[:host]
+    h = sha1.hexdigest
+    mac = ",mac=52:54:00:#{h[0..1]}:#{h[2..3]}:#{h[4..5]}"
+  end
+
+  case options[:network]
+  when "virtio"
+    args << "-device virtio-net-pci,disable-legacy=on,netdev=net0#{mac}"
+  when "e1000"
+    args << "-device e1000,netdev=net0#{mac}"
+  else
+    raise "Expect -n (network interface) one of the following values: none, virtio, e1000"
+  end
+
+  args << "-object filter-dump,id=id,netdev=net0,file=out/unicycle.pcap"
+
+  if options[:network_tap]
+    if current_os == :macosx
+      dev = "/dev/#{options[:host]}"
+      stat = File.stat(dev)
+      raise "To use qemu with networking on macOS, install the tun/tap driver:\nhttp://tuntaposx.sourceforge.net/download.xhtml" unless stat.chardev?
+      raise "For networking #{dev} must be owned by #{user}. Please run:\n     sudo chown #{user} #{dev}" unless stat.writable?
+      args << "-netdev type=tap,ifname=#{options[:host]},script=no,downscript=no,id=net0"
+    elsif current_os == :linux
+      check = `tunctl -b -u #{user} -t #{options[:host]} 2>/dev/null`
+      if check.strip != options[:host]
+        puts "To use qemu with networking on Linux, configure tun/tap:"
+        puts "Install 'uml-utilities' at Debian OR 'uml_utilities' at Arch" unless File.exists?("/usr/bin/tunctl")
+        puts "  sudo tunctl -u #{user} -t #{options[:host]}"
+        puts "  sudo ifconfig #{options[:host]} up"
+        exit 1
+      end
+      args << " -netdev type=tap,ifname=#{options[:host]},script=no,downscript=no,id=net0"
+    else
+      raise "Unknown operation system"
+    end
+  else
+    # Note we enable port forwarding 80->5555
+    args << "-netdev user,id=net0,hostname=#{options[:host]},hostfwd=tcp::5555-:80"
+  end
+end
+
+case options[:bootloader]
+when "uefi"
+  # different distros have different path to uefi fw, check all possible locations
+  fws = ["/usr/share/OVMF/OVMF_CODE.fd", "/usr/share/ovmf/x64/OVMF_CODE.fd"]
+  uefi_fw = fws.find { |f| File.exists?(f) }
+  raise "Cannot find uefi firmware in paths: #{fws}" unless uefi_fw
+
+  # check bootloader is up-to-date
+  if File.exists?("../bootloader/bootloader.efi")
+    FileUtils.mkdir_p("out/EFI/BOOT/")
+    FileUtils.cp("../bootloader/bootloader.efi", "out/EFI/BOOT/BOOTX64.EFI")
+  else
+    raise "Cannot find unicycle bootloader binary" unless File.exists?("out/EFI/BOOT/BOOTX64.EFI")
+  end
+
+  args << "--bios #{uefi_fw} -hda fat:rw:out"
+when "uniboot"
+  # this boot protocol requires patches QEMU
+  args << "-kernel out/app.elf -uniboot"
+else
+  raise "Unknown bootloader option #{bootloader}"
+end
+
+cmd = "~/sources/qemu/build/x86_64-softmmu/qemu-system-x86_64 " + args.join(" ")
+puts cmd if options[:verbose]
+
+system(cmd)

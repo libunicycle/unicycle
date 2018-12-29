@@ -1,0 +1,10 @@
+# SPDX-License-Identifier: MIT
+
+srcs = %w[
+  rtl8168.c
+  intel_e1000e.c
+]
+
+# TODO: move PCI framework out of Arch x86
+@rule[:cc].includes << "../../arch/x86"
+emit_each(:cc, srcs)

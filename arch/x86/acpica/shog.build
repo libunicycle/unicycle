@@ -1,0 +1,13 @@
+# SPDX-License-Identifier: MIT
+
+obj = []
+
+srcs = %w[
+  acpica_hooks.c
+  acpica.c
+]
+
+@rule[:cc].includes << Path.make("third_party/acpica/source/include", :root => true)
+@rule[:cc].includes << ".."
+
+emit_each(:cc, srcs)

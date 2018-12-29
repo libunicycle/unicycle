@@ -1,0 +1,56 @@
+# SPDX-License-Identifier: MIT
+
+obj = []
+
+srcs = %w[
+  cpu.c
+  interrupt.c
+  interrupt_handlers.S
+  ioapic.c
+  hpet.c
+  keyboard.c
+  mmu.c
+  pic.c
+  pci.c
+  rtc.c
+  stacktrace.c
+  start.c
+]
+srcs << "smp_trampoline.S" if @config[:SMP]
+srcs << "acpi.c" if @config[:ACPI_INHOUSE]
+
+srcs << "ahci.c" if @config[:AHCI]
+
+#  pit.c PIT is replaced with HPET
+
+srcs << (@config[:X2APIC] ? "x2apic.c" : "xapic.c")
+
+srcs << "serial.c" if @config[:SERIAL_CONSOLE]
+srcs << "vga_console.c" if @config[:VGA_CONSOLE]
+
+@rule[:cc].includes << "include"
+
+obj += emit_each(:cc, srcs)
+
+if @config[:INTEL_MICROCODE]
+  ucode_h = Path.make("third_party/intel-ucode/intel-ucode.h", :outoftree => true, :root => true)
+  obj += emit(:cc, "microcode.c", :includes => ucode_h.dir, :implicit_input => ucode_h)
+end
+
+# Multiboot loads in 32bit mode, thus initial boot sequence need to be a 32bit binary.
+# This 32bit code sets up hardware and switches to 64 bit mode.
+# So we do a trick here, compile obj file as 32bit and then use 'objcopy' to convert
+# to 64 bit for the linker
+
+src32 = []
+src32 << "start_smp_32.c" if @config[:SMP]
+
+# objcopy does not like files with LTO data
+# https://gcc.gnu.org/bugzilla/show_bug.cgi?id=81342
+# thus disable LTO
+obj32 = emit_each(:cc, src32, :cflags => "-m32 -mno-sse -fno-lto")
+obj += emit_each(:objcopy, obj32, :suffix => ".64", :arch => "elf64-x86-64")
+
+obj += visit("acpica") if @config[:ACPI_ACPICA]
+
+obj

@@ -1,0 +1,8 @@
+set pagination off
+set logging file out/gdb.log
+set logging on
+file out/app.elf
+target remote :1234
+b x86_exception_handler
+info breakpoints
+continue

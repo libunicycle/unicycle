@@ -1,0 +1,92 @@
+; INTEL 82574 GbE NIC driver
+; http://www.intel.com/content/dam/doc/datasheet/82574l-gbe-controller-datasheet.pdf
+
+0: CTRL ; Device control register, section 10.2.2.1
+  0: FULL_DUPLEX ; 0 - Half duplex, 1 - Full duplex
+  2: MASTER_DISABLE
+  5: ASDE ; Auto-Speed detection
+  6: SLU ; Set link up
+  8..9: SPEED ; Speed in Mb/s
+    0: 10
+    1: 100
+    2: 1000
+  11: FRCSPD ; Force speed
+  26: RST ; Reset
+  31: PHY_RST
+
+8: STATUS ; Status, R/O
+  0: FULL_DUPLEX
+  1: LINK_UP
+  2: TXOFF
+  6..7: SPEED
+    0: 10
+    1: 100
+    2: 1000
+
+20: MDIC ; MDI control (PHY access)
+  26..27: OP
+    1: WRITE
+    2: READ
+  28: R ; Ready Bit
+  29: I ; Interrupt Enable
+  30: E ; Error
+
+: INTR ; Interrupt bits shared among the registers below
+  2: LSC ; Link Status Change
+  7: RXT0 ; Receiver Timer
+c0: ICR ; Interrupt Cause Read
+c8: ICS ; Interrupt Cause Set
+d0: IMS ; Interrupt Mask Set
+d8: IMC ; Interrupt Mask Clear
+
+5000: RXCSUM
+5200: MTA ; Multicast Table Array
+5400: RAL
+5404: RAH
+
+100: RCTL ; Rx Control, section 10.2.5.1
+  0: RST ; Rx Reset
+  1: EN ; Rx Enable
+  2: SBP ; Store Bad Packates
+  3: UPE ; Unicast Promisc Enable
+  4: MPE ; Multicast Promisc Enable
+  5: LPE ; Long Packet Rx Enable (>1522 bytes)
+  6..7: LBM
+    0: NORMAL
+    1: MAC_LOOPBACK ; Test mode
+  8..9: RDMTS ; Receive Descriptor Minimum Threshold Size
+  12..13: MO ; Multicast Offset
+    0: 36 ; Multicast Filter Offset 36..47
+    1: 35 ; Multicast Filter Offset 35..46
+    2: 34 ; Multicast Filter Offset 34..45
+    3: 32 ; Multicast Filter Offset 32..43
+  15: BAM ; Rx Broadcast Packets Enable
+  16..17: BSIZE ; Receive Buffer Size
+    0: 2048 ; Rx Buffer 2048 * (BSEX * 16)
+    1: 1024 ; Rx Buffer 1024 * (BSEX * 16)
+    2: 512 ; Rx Buffer 512 * (BSEX * 16)
+    3: 256 ; Rx Buffer 256 * (BSEX * 16)
+  22: DPF ; Discard Pause Frames
+  23: PMCF ; Pass MAC Control Frames
+  25: BSEX ; Buffer Size Extension (x16)
+  26: SECRC ; Strip CRC Field
+2800: RDBAL ; Rx Descriptor Base Low
+2804: RDBAH ; Rx Descriptor Base High
+2808: RDLEN ; Rx Descriptor Length
+2810: RDH ; Rx Descriptor Head
+2818: RDT ; Rx Descriptor Tail
+2828: RXDCTL ; Rx Descriptor Control
+  24: GRAN ; Writeback granularity. 0 - Cache lines, 1 - Descriptors
+
+0400: TCTL ; Tx Control
+  0: RST ; Tx Reset
+  1: EN ; Tx Enable
+  3: PSP ; Pad Short Packets (to 64b)
+  22: SWXOFF ; XOFF Tx (self-clearing)
+3800: TDBAL ; Tx Descriptor Base Low
+3804: TDBAH ; Tx Descriptor Base High
+3808: TDLEN ; Tx Descriptor Length
+3810: TDH ; Tx Descriptor Head
+3818: TDT ; Tx Descriptor Tail
+3828: TXDCTL ; Tx Descriptor Control
+  24: GRAN ; Writeback granularity. 0 - Cache lines, 1 - Descriptors

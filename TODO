@@ -1,0 +1,16 @@
+aarch64 support
+add ASAN+TASAN+USAN
+add 'save crash support' and general debug tools
+setup symbolizer https://fuchsia.googlesource.com/zircon/+/master/docs/symbolizer_markup.md
+setup test framework, benchmark framework; continuous testing server with qemu and real HW
+Implement own package manager / app starter
+Reimplement shog build tool to mruby
+Add tests, unit tests, fuzzy and integration tests
+add a watchdog support to track state of the application. If application is dead then it restarts the app.
+profiling
+https integration
+check/profile IRQ handler latency
+Intel performance monitoring
+lua server example
+mruby server example
+database based on sqlite

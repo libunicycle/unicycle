@@ -1,0 +1,28 @@
+# SPDX-License-Identifier: MIT
+
+subdirs = %w[
+  alloc
+  crypto
+  net
+  blk
+]
+
+objs = visit(subdirs)
+
+srcs = %w[
+  buffer.c
+  deferredevent.c
+  float.c
+  mem.c
+  multibyte.c
+  printf.c
+  rand.c
+  sort.c
+  string.c
+  timer.c
+  unicycle.c
+]
+
+@rule[:cc].includes << "../arch/x86/include"
+
+emit_each(:cc, srcs) + objs

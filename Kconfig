@@ -1,0 +1,74 @@
+# SPDX-License-Identifier: MIT
+
+mainmenu "Unicycle Framework Configuration"
+
+config APPLICATION_PATH
+    string "Path to directory with unikernel service code"
+    default "app/http-hello"
+    ---help---
+    Specifies directory where user's service code is located.
+
+config DEBUG
+    bool "Debugging"
+    def_bool y
+    ---help---
+    Enables additional debugging and tracing capabilities. This might add some overhead during run-time.
+
+config TOOLCHAIN_PATH
+    string "Path to compiler toolchain"
+    ---help---
+    Specifies project's compiler/linker toolchain.
+
+config COMPILER
+    string "Compiler binary"
+    default "gcc"
+    ---help---
+    Specifies compiler used for project. At this point only 'gcc' and 'clang' are supported.
+
+config PER_CPU_AREA_SIZE
+    int "Per-cpu memory size"
+    default 131072  # 128K
+    ---help---
+    Each CPU has its own execution context. It needs memory for stack and per-cpu data (.tdata and .tbss sections).
+    Currently Unicycle allocates per-cpu space at init-time.
+    This value should be power-of-two so we can use buddy allocator and allocate area at run-time.
+
+config MIN_STACK_SIZE
+    int "Minimum size for stack"
+    default 65536  # 64K
+    ---help---
+    Stack is area allocated for each CPU from its per-CPU area, minus area used for thread-local data (.tbss .tdata).
+    This value is a guard that makes sure thread-local data does not eat too much per-cpu data.
+
+config SMP
+    bool "Symmetric multi-processing support"
+    def_bool y
+    ---help---
+    Enables support for systems with multiple CPUs.
+
+config FRAME_POINTER
+    bool "Enable frame pointer"
+    def_bool n
+    ---help---
+    Frame pointer is a special register (e.g. %rbp at x86_64) that keeps information about call stack.
+    This pointer helps to reconstruct call stack that is useful for error reporting.
+    Downsize of this feature is that it requires a register that is a scarse resource on many platforms.
+
+choice ARCH
+    prompt "Target architecture"
+    default ARCH_X86
+    ---help---
+    Target hardware architecture
+
+config ARCH_X86
+    bool "Intel X86_64"
+    ---help---
+    Intel X86 64bit architecture
+
+endchoice
+
+if ARCH_X86
+    source "arch/x86/Kconfig"
+endif
+
+source "third_party/acpica/source/components/Kconfig"

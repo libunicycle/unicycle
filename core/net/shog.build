@@ -1,0 +1,19 @@
+# SPDX-License-Identifier: MIT
+
+srcs = %w[
+  arp.c
+  dhcp.c
+  eth.c
+  http_parser.c
+  icmp.c
+  icmp6.c
+  ip4.c
+  ip6.c
+  tcp.c
+  udp.c
+]
+
+# TODO: remove dependency to x86 headers
+
+@rule[:cc].includes << "../../arch/x86/include"
+emit_each(:cc, srcs)

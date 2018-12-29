@@ -1,0 +1,11 @@
+# SPDX-License-Identifier: MIT
+
+srcs = %w[
+  virtio.c
+  virtio_blk.c
+  virtio_net.c
+]
+
+@rule[:cc].includes << "../../arch/x86"
+
+emit_each(:cc, srcs)

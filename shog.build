@@ -1,0 +1,44 @@
+# SPDX-License-Identifier: MIT
+
+require_relative "build/bin2c"
+register_rule(Bin2C)
+
+require_relative "build/genconfig"
+register_rule(GenConfig)
+
+@config = Kconfig.parse(".config")
+@config.freeze
+
+@rule[:cc].bin = @config[:TOOLCHAIN_PATH] + @config[:COMPILER]
+#@rule[:cc].bin = 'include-what-you-use'
+@rule[:ld].bin = @rule[:cc].bin
+@rule[:objcopy].bin = @config[:TOOLCHAIN_PATH] + "objcopy"
+
+@rule[:cc].cflags << "-g -ggdb -flto -nostdlib -ffreestanding -std=c11 -fno-stack-protector -mno-red-zone -fno-math-errno -fno-trapping-math -fno-common -fno-PIC -fno-PIE -static -W -Wall -Wextra -O3"
+@rule[:cc].cflags << (@config[:FRAME_POINTER] ? "-fno-omit-frame-pointer" : "-fomit-frame-pointer")
+
+# For now compile for current CPU. Later we should have a config file option that specifies what Arch/Tune we are targeting for.
+@rule[:cc].cflags << "-mtune=native"
+@rule[:cc].includes << "include"
+
+config_h = Path.make("include/config.h", :outoftree => true)
+emit(:genconfig, ".config", :output => config_h)
+@rule[:cc].includes << config_h.dir
+@rule[:cc].implicit_input << config_h
+
+subdirs = %w[core drv]
+subdirs << "arch/x86" if @config[:ARCH_X86]
+subdirs << "third_party/intel-ucode" if @config[:INTEL_MICROCODE]
+subdirs << "third_party/acpica/source/components" if @config[:ACPI_ACPICA]
+subdirs << @config[:APPLICATION_PATH]
+objs = visit(subdirs)
+
+#linkerscript = emit(:cc, 'arch/x86/linker.ld', :cflags => '-P -E -x c -D __ASSEMBLER__', :output => 'linker.ld', :includes => 'include')
+linkerscript = cwd("arch/x86/linker.ld")
+
+ldflags = ["-Wl,-n -Wl,--gc-sections -Wl,-T" + linkerscript]
+ldflags += @rule[:cc].cflags # we link with gcc so let's pass cflags to it as well
+app = emit(:ld, objs, :output => "app.elf", :ldflags => ldflags, :implicit_input => linkerscript)
+@default_target << app
+
+emit(:generate_build, ".config")

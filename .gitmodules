@@ -1,0 +1,6 @@
+[submodule "third_party/acpica"]
+	path = third_party/acpica
+	url = ../acpica
+[submodule "third_party/intel-ucode"]
+	path = third_party/intel-ucode
+	url = ../Intel-Linux-Processor-Microcode-Data-Files

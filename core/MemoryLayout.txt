@@ -1,0 +1,13 @@
+Memory layout:
+
+ * headers (like multiboot)
+ * text - executables
+ * destructors - list of functions to call when the app goes down
+ * ro - readonly data
+ * data - read/write data
+ * init - section (text/ro/data) unloaded from the memory after init complete
+ * constructors - pointers to initialization functions
+
+ * HEAP - phisical contingent memory available to app
+
+ * per_cpu - each cpu gets a slice of this area. And each slice is divided to [data/bss/stack]

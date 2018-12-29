@@ -1,0 +1,10 @@
+# SPDX-License-Identifier: MIT
+
+srcs = %w[
+  app.c
+]
+
+objs = emit_each(:cc, srcs)
+objs += visit("memcached")
+
+objs
