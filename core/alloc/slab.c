@@ -1,6 +1,7 @@
 // SPDX-License-Identifier: MIT
 
 #include "slab.h"
+#include "asan.h"
 #include "buddy.h"
 #include "compiler.h"
 #include "config.h"
@@ -187,6 +188,7 @@ static void *allocate_from_bucket(size_t idx, uint64_t flags) {
             if (!head)
                 PANIC("Cannot allocate buddy area for temporary slab");
         }
+        asan_mark_memory_region((uintptr_t)head, head_struct_size, ASAN_TAG_RW);
 
         head->slab = slab;
         head->slab_order = new_slab_order;
@@ -211,10 +213,12 @@ static void *allocate_from_bucket(size_t idx, uint64_t flags) {
 
         if (temp_head_order) {
             struct slab_head *real_head = allocate_from_bucket(head_bucket_idx, FLAG_ALLOCATE_NO_FOREIGN);
+            asan_mark_memory_region((uintptr_t)real_head, head_struct_size, ASAN_TAG_RW);
             memcpy(real_head, head, head_struct_size);
             bucket->slab_head = real_head;
             // printf("Copy temp head from %p to %p\n", head, real_head);
 
+            asan_mark_memory_region((uintptr_t)head, head_struct_size, ASAN_TAG_SLAB_FREED);
             alloc_buddy_free(head, temp_head_order);
         }
     }

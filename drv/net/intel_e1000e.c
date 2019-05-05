@@ -287,6 +287,8 @@ static void e1000e_received(struct e1000e_dev *dev) {
         buff->pos = buff->area;
         buff->area_size = RX_BUFFER_SIZE;
         buff->data_size = desc->length;
+        // TODO: mark only desc->length of the receive buffer as ASAN RW. The rest of the buffer
+        // should be marked invalid.
         eth_receive(&dev->eth_dev, buff);
 
         desc->status = 0;

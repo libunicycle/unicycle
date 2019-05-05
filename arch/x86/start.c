@@ -3,6 +3,7 @@
 #include "acpi.h"
 #include "alloca.h"
 #include "apic.h"
+#include "asan.h"
 #include "buddy.h"
 #include "compiler.h"
 #include "config.h"
@@ -131,6 +132,10 @@ INIT_CODE static void *percpu_area_setup(void) {
     BUILD_PANIC_IF(CONFIG_PER_CPU_AREA_SIZE < CONFIG_MIN_STACK_SIZE, "Configured stack is too small");
 #endif
 
+    // TODO: currently we mark stack area as readable/writable
+    //       in the future we need to mark it as unintialized and enable ASAN for stack
+    asan_mark_memory_region((uintptr_t)percpu_area, CONFIG_PER_CPU_AREA_SIZE, ASAN_TAG_RW);
+
     return percpu_area;
 }
 
@@ -192,23 +197,61 @@ INIT_CODE static void load_segments_info(struct uniboot_info *boot_info) {
 
 INIT_CODE void memory_allocator_init(struct uniboot_info *bootinfo) {
     struct uniboot_memory_map *mmap = find_uniboot_entry(bootinfo, UNIBOOT_ENTRY_MEMORY_MAP);
-    struct uniboot_memory_area *area = mmap->areas;
+    struct uniboot_memory_area *area;
+    size_t i;
 
-    // Find maximum address value, we need it to calculate root page order for buddy allocator
-    for (size_t i = 0; i < mmap->num; i++, area++) {
-        printf("Discovered memory area, type: %ld 0x%lx-0x%lx\n", area->type, (uintptr_t)area->start,
-               (uintptr_t)area->start + area->length);
+    // By convention we load our kernel at 1MiB. Skip area below 1MiB for now.
+    // TODO: replace these extern vars coming from linker script with data read from segments_info
+    extern uint8_t __kernel_start, __kernel_end;
+
+    uintptr_t max_addr = 0;
+    for (i = 0, area = mmap->areas; i < mmap->num; i++, area++) {
         if (area->type != UNIBOOT_MEM_RAM)
             continue;
+        uintptr_t end = (uintptr_t)area->start + area->length;
+        if (end > max_addr)
+            max_addr = end;
+    }
+
+#ifdef CONFIG_ASAN
+    uintptr_t asan_shadow_addr = asan_init_shadow(max_addr);
+
+    // mark mem area used by kernel's .text/.bss as initialized right away
+    asan_mark_memory_region((uintptr_t)&__kernel_start, (uintptr_t)&__kernel_end - (uintptr_t)&__kernel_start, ASAN_TAG_RW);
+
+    // TODO: find out a place where we stop using the bootinfo memory, then mark it as UNINITIALIZED
+    asan_mark_memory_region((uintptr_t)bootinfo, bootinfo->length, ASAN_TAG_RW);
+
+    // Mark qemu's stack area used at bootstrap stage
+    // the stack address and size defined in QEMU's sources
+    asan_mark_memory_region(500 * 1024, 80 * 1024, ASAN_TAG_RW);
+
+    asan_enable_reporting();
+#endif
+
+    for (i = 0, area = mmap->areas; i < mmap->num; i++, area++) {
+        printf("Discovered memory area, type: %ld 0x%lx-0x%lx\n", area->type, (uintptr_t)area->start,
+               (uintptr_t)area->start + area->length);
+
+        if (area->type == UNIBOOT_MEM_ACPI || area->type == UNIBOOT_MEM_RESERVED) {
+            // reserved is usually MMIO areas, so mark it as RW
+            if (area->start < max_addr)
+                asan_mark_memory_region(area->start, area->length, ASAN_TAG_RW);
+            continue;
+        }
 
         uintptr_t area_begin = (uintptr_t)area->start;
         uintptr_t area_end = (uintptr_t)area->start + area->length;
 
-        // By convention we load our kernel at 1MiB. Skip area below that for now.
-        // TODO: replace these extern vars coming from linker script with segments_info
-        extern uint8_t __kernel_start, __kernel_end;
         if (area_end <= (uintptr_t)&__kernel_end)
             continue;
+
+#ifdef CONFIG_ASAN
+        if (area_end > asan_shadow_addr) {
+            PANIC_IF(area_begin > area_end);
+            area_end = asan_shadow_addr;
+        }
+#endif
 
         // One thing to remember that the first area added to buddy allocator is going to be used for freebits
         // And this area should be big enough (32KiB currently)

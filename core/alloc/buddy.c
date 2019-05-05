@@ -1,6 +1,7 @@
 // SPDX-License-Identifier: MIT
 
 #include "buddy.h"
+#include "asan.h"
 #include "lock.h"
 #include "mem.h"
 #include <stdint.h>
@@ -239,6 +240,8 @@ void alloc_buddy_append(uintptr_t begin, uintptr_t end) {
 
     PANIC_IF(range_order >= BUDDY_SIZE_ORDER_MAX, "Adding range that is bigger than a range we can handle");
 
+    asan_mark_memory_region(begin, end - begin, ASAN_TAG_UNINITIALIZED);
+
     if (!buddy_array) {
         // Buddy allocator is not initialized, adding its first area requires allocating feebits array from this area
 
@@ -248,6 +251,7 @@ void alloc_buddy_append(uintptr_t begin, uintptr_t end) {
         uintptr_t buddy_array_begin = ROUND_UP(begin, BUDDY_BOORSTRAP_ARRAY_SIZE);
         uintptr_t buddy_array_end = buddy_array_begin + BUDDY_BOORSTRAP_ARRAY_SIZE;
         PANIC_IF(buddy_array_end >= end, "Initial range is too small for buddy bootstrap");
+        asan_mark_memory_region(buddy_array_begin, BUDDY_BOORSTRAP_ARRAY_SIZE, ASAN_TAG_RW);
 
         freebits = (uint64_t *)buddy_array_begin;
         // Find how many buddy elements fits this area, note that we need some space for freebits[] array

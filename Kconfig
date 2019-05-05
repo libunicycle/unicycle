@@ -72,3 +72,9 @@ if ARCH_X86
 endif
 
 source "third_party/acpica/source/components/Kconfig"
+
+config ASAN
+    bool "ASAN runtime memory debugger"
+    ---help---
+    Enables address sanitizer https://github.com/google/sanitizers/wiki/AddressSanitizer
+    designed to find out-of-bounds access and use-after-free bugs.

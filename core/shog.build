@@ -25,4 +25,6 @@ srcs = %w[
 
 @rule[:cc].includes << "../arch/x86/include"
 
-emit_each(:cc, srcs) + objs
+objs += emit_each(:cc, srcs)
+
+objs

@@ -2,6 +2,7 @@
 
 #include "acpi.h"
 #include "apic.h"
+#include "asan.h"
 #include "compiler.h"
 #include "cpu.h"
 #include "kalloc.h"
@@ -379,6 +380,7 @@ INIT_CODE void acpi_init(void *root) {
     } else {
         // 0xe0000 - 0xfffff
         page_table_set_bit(0xe0000, 0x20000, PAGE_PRESENT, PAGE_PRESENT);
+        asan_mark_memory_region(0xe0000, 0x20000, ASAN_TAG_RW);
         root = find_acpi_root();
     }
 

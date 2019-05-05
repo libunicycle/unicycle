@@ -2,8 +2,11 @@
 
 srcs = %w[
   buddy.c
-  kalloc.c
   slab.c
 ]
 
-emit_each(:cc, srcs)
+objs = emit_each(:cc, srcs)
+
+objs += emit_each(:cc, ["asan.c"], :cflags => "-fno-sanitize=kernel-address") if @config[:ASAN]
+
+objs

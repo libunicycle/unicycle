@@ -54,7 +54,7 @@ static const size_t PAGE_ENTRY_SIZES[] = {L1_PAGE_ENTRY_SIZE, L2_PAGE_ENTRY_SIZE
 static page_entry *page_entry_split(page_entry *future_parent, size_t level /* children's level */, uint64_t address) {
     // printf("page_entry_split dir 0x%lx start 0x%lx level %ld\n", (uintptr_t)future_parent, *future_parent & PAGE_ENTRY_ADDR_MASK, level);
     PANIC_IF(level < 1, "There is no such thing as 0-level page");
-    page_entry *dir = kalloc_size(PAGE_SIZE);
+    page_entry *dir = kalloc_size_noredzone(PAGE_SIZE);
     memset(dir, 0, PAGE_SIZE);
     size_t page_size = PAGE_ENTRY_SIZES[level - 1];
 
@@ -91,7 +91,7 @@ static void page_dir_normalize(page_entry *page_dir, page_entry *parent_entry, s
         if (canfold) {
             // printf("merge page dir at address %lx level %ld into parent\n", page_dir[0] & PAGE_ENTRY_ADDR_MASK, level);
             *parent_entry = expected_flags | PAGE_LARGE | (page_dir[0] & PAGE_ENTRY_ADDR_MASK);
-            kfree_size(page_dir, PAGE_SIZE);
+            kfree_size_noredzone(page_dir, PAGE_SIZE);
 
             return;
         }
