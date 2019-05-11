@@ -102,7 +102,7 @@ static void dump_frame(struct interrupt_frame *frame) {
 static void exception_die(const char *msg, struct interrupt_frame *frame) {
     printf("%s\n", msg);
     dump_frame(frame);
-    if (CONFIG_FRAME_POINTER) {
+    if (IS_ENABLED(CONFIG_FRAME_POINTER)) {
         print_stack_trace(frame->bp);
     }
     x86_stop();

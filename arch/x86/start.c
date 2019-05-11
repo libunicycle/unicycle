@@ -32,7 +32,7 @@
 #include <stddef.h>
 #include <stdint.h>
 
-#if IS_ENABLED(CONFIG_SMP)
+#ifdef CONFIG_SMP
 
 INIT_DATA struct uniboot_segment uniboot_tls_segment;
 
@@ -104,7 +104,7 @@ INIT_CODE static void *percpu_area_setup(void) {
     BUILD_PANIC_IF(!ISPOW2(CONFIG_PER_CPU_AREA_SIZE), "PER_CPU_AREA_SIZE config should be power of two");
     void *percpu_area = alloc_buddy_allocate(ILOG2(CONFIG_PER_CPU_AREA_SIZE));
 
-#if IS_ENABLED(CONFIG_SMP)
+#ifdef CONFIG_SMP
     // It is an equivalent of thread_info struct.
     // Some (e.g. x86_64) TLS ABIs keep it above TLS area some other below TLS
     struct cpu_info {
@@ -165,7 +165,7 @@ INIT_CODE static void load_segments_info(struct uniboot_info *boot_info) {
     SHOUT_IF(!segs, "ELF segments information is not provided");
     for (uint16_t i = 0; i < segs->num; i++) {
         if (segs->segments[i].type == UNIBOOT_SEGTYPE_TLS) {
-#if IS_ENABLED(CONFIG_SMP)
+#ifdef CONFIG_SMP
             uniboot_tls_segment = segs->segments[i];
 #else
             SHOUT_IF(segs->segments[i].memsz, "SMP is disabled but application has a TLS segment of size %ld", segs->segments[i].memsz);
@@ -362,7 +362,7 @@ NOINLINE NORETURN void bootstrap_unicycle_loop(void *stack_addr) {
     uintptr_t init_start = uniboot_init_segment.vaddr;
     size_t init_length = ROUND_UP(uniboot_init_segment.memsz, PAGE_SIZE);
 
-    if (CONFIG_DEBUG) {
+    if (IS_ENABLED(CONFIG_DEBUG)) {
         // Make the segment area unreadable, any access to thjis area will cause an exception
         page_table_set_bit(init_start, init_length, PAGE_NO_EXECUTABLE | PAGE_WRITABLE | PAGE_PRESENT, PAGE_NO_EXECUTABLE);
     } else {
@@ -429,7 +429,7 @@ NORETURN INIT_CODE void start(struct uniboot_info *bootinfo) {
     keyboard_init();
     timer_system_init();
 
-    if (CONFIG_INTEL_MICROCODE) {
+    if (IS_ENABLED(CONFIG_INTEL_MICROCODE)) {
         microcode_load();
     }
     x86_sti();
@@ -446,7 +446,7 @@ NORETURN INIT_CODE void start(struct uniboot_info *bootinfo) {
     __builtin_unreachable();
 }
 
-#if IS_ENABLED(CONFIG_SMP)
+#ifdef CONFIG_SMP
 
 NORETURN INIT_CODE void start_ap_64(void) {
     // 64bit mode does not use selectors, set it to null value
@@ -457,7 +457,7 @@ NORETURN INIT_CODE void start_ap_64(void) {
     void *percpu_area = percpu_area_setup();
     apic_init();
     current_cpu_id = cpu_id_get();
-    if (CONFIG_INTEL_MICROCODE) {
+    if (IS_ENABLED(CONFIG_INTEL_MICROCODE)) {
         microcode_load();
     }
     cpu_mark_online(current_cpu_id, percpu_area);

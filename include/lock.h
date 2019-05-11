@@ -4,10 +4,11 @@
 
 #include "compiler.h"
 #include "config.h"
+#include "kconfig.h"
 #include "shout.h"
 #include <stdbool.h>
 
-#if IS_ENABLED(CONFIG_SMP)
+#ifdef CONFIG_SMP
 
 #include <stdatomic.h>
 
@@ -19,7 +20,7 @@ static inline void lock(lock_t *l) {
     bool expected = false;
     while (!atomic_compare_exchange_weak_explicit(l, &expected, true, memory_order_acquire, memory_order_relaxed)) {
         expected = false;
-        if (CONFIG_ARCH_X86) {
+        if (IS_ENABLED(CONFIG_ARCH_X86)) {
             // x86 spin lock hint
             __asm__ volatile("pause");
         }

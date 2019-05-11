@@ -238,7 +238,7 @@ void acpi_init(UNUSED void *acpi_root) {
     // TODO: maybe move 'setbit code' into AcpiOsMapMemory hook?
     page_table_set_bit(0xe0000, 0x20000, PAGE_PRESENT, PAGE_PRESENT);
 
-    if (CONFIG_ACPI_DEBUG_OUTPUT) {
+    if (IS_ENABLED(CONFIG_ACPI_DEBUG_OUTPUT)) {
         AcpiDbgLevel = ACPI_LV_VERBOSITY3 | ACPI_LV_VERBOSE;
         AcpiDbgLayer = ACPI_TRACE_LAYER_ALL;
     }

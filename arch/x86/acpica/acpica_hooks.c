@@ -86,7 +86,7 @@ ACPI_STATUS AcpiOsExecute(ACPI_EXECUTE_TYPE Type, ACPI_OSD_EXEC_CALLBACK Functio
 }
 
 ACPI_STATUS AcpiOsCreateMutex(ACPI_MUTEX *OutHandle) {
-#if IS_ENABLED(CONFIG_SMP)
+#ifdef CONFIG_SMP
     *OutHandle = kalloc(lock_t);
 #else
     *OutHandle = NULL;
@@ -104,7 +104,7 @@ void AcpiOsReleaseMutex(ACPI_MUTEX Handle) { unlock(Handle); }
 void AcpiOsDeleteMutex(ACPI_MUTEX Handle) { kfree(Handle); }
 
 ACPI_STATUS AcpiOsCreateLock(ACPI_SPINLOCK *OutHandle) {
-#if IS_ENABLED(CONFIG_SMP)
+#ifdef CONFIG_SMP
     *OutHandle = kalloc(lock_t);
 #else
     *OutHandle = NULL;

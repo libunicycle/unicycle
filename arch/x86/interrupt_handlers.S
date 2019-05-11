@@ -34,7 +34,7 @@ exception_handlers_end:
 
 # implementation of apic_interrupt_ack() in ASM
 .macro apic_eoi
-#if IS_ENABLED(CONFIG_X2APIC)
+#ifdef CONFIG_X2APIC
     push %rax
     push %rcx
     push %rdx
@@ -60,7 +60,7 @@ irq_handlers:
 .rept INTERRUPTS_NUM-IRQ_BASE
 
     cli # we serialize IRQ handlers and mask all interruptsion until we process the current IRQ
-#if IS_ENABLED(CONFIG_SMP)
+#ifdef CONFIG_SMP
     movq $i, %fs:irq_ready_num@tpoff
 #else
     movq $i, irq_ready_num

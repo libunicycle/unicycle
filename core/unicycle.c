@@ -10,7 +10,7 @@
 #include <stdbool.h>
 #include <stdint.h>
 
-#if IS_ENABLED(CONFIG_DEBUG) && IS_ENABLED(CONFIG_SMP)
+#if defined(CONFIG_DEBUG) && defined(CONFIG_SMP)
 
 #define PERCPU_MARKER 0xbeef5520
 

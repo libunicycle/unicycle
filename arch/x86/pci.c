@@ -401,7 +401,7 @@ void pci_enable_bus_master(struct pci_device_info *dev, bool enable) {
 };
 
 void pci_init(void) {
-    if (CONFIG_DEBUG) {
+    if (IS_ENABLED(CONFIG_DEBUG)) {
         printf("Following PCI devices are registered:\n");
         extern struct pci_device __drivers_pci_start, __drivers_pci_end;
         for (struct pci_device *drv = &__drivers_pci_start; drv < &__drivers_pci_end; drv++) {

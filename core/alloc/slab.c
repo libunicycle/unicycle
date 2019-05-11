@@ -89,7 +89,7 @@ struct bucket {
     size_t total_capacity; // total number of elements that fit all the slabs
     size_t used;           // number of elements used in this bucket
 
-#if IS_ENABLED(CONFIG_SMP)
+#ifdef CONFIG_SMP
     // foreign_num is going to be hot data (we check it at every allocation)
     // keep it together with other hot data
     size_t foreign_num;
@@ -98,7 +98,7 @@ struct bucket {
 
 PERCPU struct bucket buckets[BUCKETS_NUM];
 
-#if IS_ENABLED(CONFIG_SMP)
+#ifdef CONFIG_SMP
 
 #define GLOBAL_FOREIGN_NUM 1024
 
@@ -118,7 +118,7 @@ static size_t slab_head_size(size_t freeobj_size) { return sizeof(struct slab_he
 static void *allocate_from_bucket(size_t idx, uint64_t flags) {
     struct bucket *bucket = &buckets[idx];
 
-#if IS_ENABLED(CONFIG_SMP)
+#ifdef CONFIG_SMP
     if (bucket->foreign_num && !(flags & FLAG_ALLOCATE_NO_FOREIGN)) {
         // we have foreign objects available, allocate one of them
         return foreign[idx][bucket->foreign_num--];
@@ -295,7 +295,7 @@ void alloc_slab_free(void *obj, size_t size) {
         head = head->next;
     }
 
-#if IS_ENABLED(CONFIG_SMP)
+#ifdef CONFIG_SMP
     // Current bucket does not have slabs that contain given object
     // It probably belongs to other CPU. Add the object to foreign array
     if (bucket->foreign_num < LOCAL_FOREIGN_NUM) {

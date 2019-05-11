@@ -65,11 +65,11 @@ typedef signed long int ssize_t;
 
 #define BIT(x) ((uint64_t)1 << (x))
 
-#define IFD if (CONFIG_DEBUG)
-#define IFV if (CONFIG_DEBUG)
-#define IFVV if (CONFIG_DEBUG)
+#define IFD if (IS_ENABLED(CONFIG_DEBUG))
+#define IFV if (IS_ENABLED(CONFIG_DEBUG))
+#define IFVV if (IS_ENABLED(CONFIG_DEBUG))
 
-#if IS_ENABLED(CONFIG_SMP)
+#ifdef CONFIG_SMP
 #define PERCPU _Thread_local
 #else
 #define PERCPU

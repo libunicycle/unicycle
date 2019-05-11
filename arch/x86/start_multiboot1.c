@@ -112,7 +112,7 @@ NORETURN void _entry(void) {
     if (!(edx & CPUID_EDX_APIC)) {
         error("No APIC present at the system");
     }
-    if (CONFIG_X2APIC && !(ecx & CPUID_ECX_X2APIC)) {
+    if (IS_ENABLED(CONFIG_X2APIC) && !(ecx & CPUID_ECX_X2APIC)) {
         error("x2APIC mode is not supported");
     }
 
