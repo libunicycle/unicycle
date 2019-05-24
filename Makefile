@@ -18,3 +18,4 @@ format-code:
 
 update-regmap:
 	find . -name *.regs -exec sh -c "./scripts/gen_regmap.rb {}; clang-format -i -style=file {}.h" \;
+	find . -name *.rb -o name *shog.build -exec sh -c "rufo {}" \;
