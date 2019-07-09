@@ -23,6 +23,8 @@ srcs = %w[
   unicycle.c
 ]
 
+srcs << 'ubsan.c' if @config[:UBSAN]
+
 @rule[:cc].includes << "../arch/x86/include"
 
 objs += emit_each(:cc, srcs)

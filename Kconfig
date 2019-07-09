@@ -78,3 +78,9 @@ config ASAN
     ---help---
     Enables address sanitizer https://github.com/google/sanitizers/wiki/AddressSanitizer
     designed to find out-of-bounds access and use-after-free bugs.
+
+
+config UBSAN
+    bool "UBSAN (Undefined Behavior Sanitizer)"
+    ---help---
+    Enables Undefined Behavior Sanitizer

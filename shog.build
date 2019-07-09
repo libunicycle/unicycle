@@ -21,6 +21,7 @@ register_rule(GenConfig)
 @rule[:cc].cflags << "-mtune=native"
 @rule[:cc].includes << "include"
 
+@rule[:cc].cflags << '-fsanitize=undefined' if @config[:UBSAN]
 @rule[:cc].cflags << '-fsanitize=kernel-address' if @config[:ASAN]
 
 config_h = Path.make("include/config.h", :outoftree => true)
