@@ -12,7 +12,7 @@ typedef uint32_t ip4addr_t;
 #define IPADDR_PRINT_FMT "%d.%d.%d.%d"
 #define IPADDR_PRINT_PARAMS(addr) ((uint8_t)(addr >> 24)), ((uint8_t)(addr >> 16)), ((uint8_t)(addr >> 8)), ((uint8_t)addr)
 
-#define IPADDR(p1, p2, p3, p4) (ip4addr_t)((p1 << 24) | (p2 << 16) | (p3 << 8) | (p4))
+#define IPADDR(p1, p2, p3, p4) (ip4addr_t)(((uint32_t)p1 << 24) | ((uint32_t)p2 << 16) | ((uint32_t)p3 << 8) | ((uint32_t)p4))
 #define IPADDR_ANY IPADDR(0, 0, 0, 0)
 #define IPADDR_INVALID IPADDR_ANY
 #define IPADDR_BROADCAST IPADDR(255, 255, 255, 255)
