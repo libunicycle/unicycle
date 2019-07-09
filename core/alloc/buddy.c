@@ -382,7 +382,7 @@ void *alloc_buddy_allocate(uint32_t page_order) {
         return NULL;
     }
 
-    uintptr_t addr = PAGE_ORDER(sizeof(uintptr_t) - buddy_root_order);
+    uintptr_t addr = PAGE_ORDER(sizeof(uintptr_t) * 8 - buddy_root_order);
 
     // printf("alloc_buddy_allocate order is %u\n", page_order);
     void *ptr = alloc_buddy_allocate_ptr(&buddy_root, buddy_root_order, page_order, addr);
