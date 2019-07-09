@@ -172,7 +172,7 @@ static inline uint8_t pci_cap_get(struct pci_device_info *dev_info, uint8_t id) 
 
 void pci_msi_addr(uint8_t vector, uint32_t *addr, uint16_t *value) {
     // base | destination | redirect hint | phisical mode
-    *addr = (0xfee << 20) | (0xff << 12) | (1 << 3) | (1 << 2); // lowest priority
+    *addr = (0xfeeU << 20) | (0xff << 12) | (1 << 3) | (1 << 2); // lowest priority
     // edge trigger mode | fixed delivery mode | vector
     *value = (0 << 15) | (0 << 8) | vector;
 }
