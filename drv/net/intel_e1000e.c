@@ -369,6 +369,7 @@ INIT_CODE static void e1000e_probe(struct pci_device_info *info) {
 
     page_table_set_bit((uintptr_t)bar.address, bar.size, PAGE_PRESENT | PAGE_WRITABLE | PAGE_CACHE_DISABLE,
                        PAGE_PRESENT | PAGE_WRITABLE | PAGE_CACHE_DISABLE);
+    asan_mark_memory_region((uintptr_t)bar.address, bar.size, ASAN_TAG_RW);
 
     struct e1000e_dev *dev = kalloc(struct e1000e_dev);
     memzero(dev);
