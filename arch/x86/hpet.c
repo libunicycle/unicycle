@@ -2,6 +2,7 @@
 
 #include "acpi.h"
 #include "arch_timer.h"
+#include "asan.h"
 #include "compiler.h"
 #include "cpu.h"
 #include "interrupt.h"
@@ -58,6 +59,7 @@ void arch_timer_init(event_handler_t irq_handler) {
 
     page_table_set_bit(g_hpet_addr, PAGE_SIZE, PAGE_PRESENT | PAGE_WRITABLE | PAGE_CACHE_DISABLE,
                        PAGE_PRESENT | PAGE_WRITABLE | PAGE_CACHE_DISABLE);
+    asan_mark_memory_region(g_hpet_addr, PAGE_SIZE, ASAN_TAG_RW);
 
     uint64_t id = HPET_REG(REG_ID);
     uint64_t config = HPET_REG(REG_CONFIG);
