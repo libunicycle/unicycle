@@ -222,11 +222,13 @@ INIT_CODE void memory_allocator_init(struct uniboot_info *bootinfo) {
     // TODO: find out a place where we stop using the bootinfo memory, then mark it as UNINITIALIZED
     asan_mark_memory_region((uintptr_t)bootinfo, bootinfo->length, ASAN_TAG_RW);
 
-    // Mark qemu's stack area used at bootstrap stage
-    // the stack address and size defined in QEMU's sources
-    asan_mark_memory_region(500 * 1024, 80 * 1024, ASAN_TAG_RW);
+    // TODO: find a way to detect memory area used for stack and mark it as ASAN RW here
+    // e.g. QEMU uses static allocation (500K-580K) for stack
+    // but UEFI uses different address space
+    // asan_mark_memory_region(500 * 1024, 80 * 1024, ASAN_TAG_RW);
 
-    asan_enable_reporting();
+    // If we enable ASAN here then it will complain as we access stack data
+    // asan_enable_reporting();
 #endif
 
     for (i = 0, area = mmap->areas; i < mmap->num; i++, area++) {
@@ -415,6 +417,11 @@ NOINLINE NORETURN void bootstrap_unicycle_loop(void *stack_addr) {
         alloc_buddy_append(init_start, init_start + init_length);
     }
     page_mapping_reload_root();
+
+    // It would be great to enable ASAN earlier in memory_allocator_init.
+    // For that we need to mark stack as RW but currently we do not know exact area for the boot stack.
+    // So for now we enable ASAN right before we set our own stack with known location.
+    asan_enable_reporting();
 
     __asm__ volatile("mov %0, %%rsp" ::"ir"(stack_addr));
 

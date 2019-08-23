@@ -24,6 +24,7 @@ void asan_mark_memory_region(uintptr_t start, size_t size, uint8_t tag);
 
 #else
 
+static inline void asan_enable_reporting(void) {}
 static inline void asan_mark_memory_region(UNUSED uintptr_t start, UNUSED size_t size, UNUSED uint8_t tag) {}
 
 #endif
