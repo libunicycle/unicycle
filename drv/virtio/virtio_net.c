@@ -61,7 +61,7 @@ static void virtio_init_rx_buffer(struct virtq *queue) {
         desc++;
 
         // desc for data
-        desc->addr = (uintptr_t)kalloc_size(RX_BUFFER_SIZE);
+        desc->addr = (uintptr_t)kalloc_size_flags(RX_BUFFER_SIZE, KALLOC_ASAN_SKIP_INIT);
         desc->len = RX_BUFFER_SIZE;
         desc->flags = VIRTQ_DESC_F_WRITE;
         desc->next = 0;
@@ -101,10 +101,11 @@ static void virtio_net_rx_handler(void *data) {
         buff->pos = buff->area;
         buff->area_size = RX_BUFFER_SIZE;
         buff->data_size = e->len - sizeof(struct virtio_net_hdr_v1);
+        asan_mark_memory_region((uintptr_t)buff->area, buff->data_size, ASAN_TAG_RW);
         eth_receive(&dev->eth_dev, buff);
         q->avail->ring[q->avail->idx % q->size] = e->id;
         // the old buffer been consumed by higher network level handler, allocate a new buffer
-        payload_desc->addr = (uintptr_t)kalloc_size(RX_BUFFER_SIZE);
+        payload_desc->addr = (uintptr_t)kalloc_size_flags(RX_BUFFER_SIZE, KALLOC_ASAN_SKIP_INIT);
 
         q->last_used_idx++;
         q->avail->idx++;
@@ -133,7 +134,7 @@ static void virtio_net_tx_handler(void *data) {
         kfree((struct virtio_net_hdr_v1 *)desc->addr);
         desc = &q->desc[desc->next];
         // area
-        kfree_size((void *)desc->addr, RX_BUFFER_SIZE);
+        kfree_size_flags((void *)desc->addr, RX_BUFFER_SIZE, KALLOC_ASAN_SKIP_INIT);
 
         // Currently TX transaction has only 2 descriptors, so we are done iterating used elements
         // but in the future we might have more
@@ -168,6 +169,9 @@ static void virtio_net_send(struct eth_device *eth, buffer_t *buff) {
             return;
         }
     }
+
+    // this buffer is in process of sending out, from now on nobody should ever write to it
+    asan_mark_memory_region((uintptr_t)buff->area, buff->area_size, ASAN_TAG_SLAB_FREED);
 
     uint16_t desc_idx = q->unused_desc_idx;
     q->avail->ring[q->avail->idx % q->size] = desc_idx;

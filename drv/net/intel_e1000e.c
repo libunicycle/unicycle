@@ -158,7 +158,7 @@ static void e1000e_interrupt_enable(struct e1000e_dev *dev) {
 static void e1000e_rxinit(struct e1000e_dev *dev) {
     memset(dev->rx_desc, 0, sizeof(dev->rx_desc));
     for (int i = 0; i < NUM_RX_DESC; i++) {
-        dev->rx_desc[i].addr = (uintptr_t)kalloc_size(RX_BUFFER_SIZE);
+        dev->rx_desc[i].addr = (uintptr_t)kalloc_size_flags(RX_BUFFER_SIZE, KALLOC_ASAN_SKIP_INIT);
     }
 
     uintptr_t desc_addr = (uintptr_t)dev->rx_desc;
@@ -287,12 +287,11 @@ static void e1000e_received(struct e1000e_dev *dev) {
         buff->pos = buff->area;
         buff->area_size = RX_BUFFER_SIZE;
         buff->data_size = desc->length;
-        // TODO: mark only desc->length of the receive buffer as ASAN RW. The rest of the buffer
-        // should be marked invalid.
+        asan_mark_memory_region((uintptr_t)buff->area, buff->data_size, ASAN_TAG_RW);
         eth_receive(&dev->eth_dev, buff);
 
         desc->status = 0;
-        desc->addr = (uintptr_t)kalloc_size(RX_BUFFER_SIZE);
+        desc->addr = (uintptr_t)kalloc_size_flags(RX_BUFFER_SIZE, KALLOC_ASAN_SKIP_INIT);
 
         REG(RDT) = rx_rd;
         rx_rd = (rx_rd + 1) % NUM_RX_DESC;
@@ -320,7 +319,7 @@ static void e1000e_reap_tx_buffers(struct e1000e_dev *dev) {
         if (!(desc->status & TXD_STATUS_DONE))
             break;
         SHOUT_IF(!desc->addr, "Trying to free a descriptor without buffer");
-        kfree_size((void *)desc->addr, RX_BUFFER_SIZE);
+        kfree_size_flags((void *)desc->addr, RX_BUFFER_SIZE, KALLOC_ASAN_SKIP_INIT);
         desc->addr = 0;
         desc->status = 0;
 
@@ -347,6 +346,8 @@ static void e1000e_send(struct eth_device *eth, buffer_t *buff) {
         memset(buff->pos + buff->data_size, 0, 60 - buff->data_size);
         buff->data_size = 60;
     }
+    // this buffer is in process of sending out, from now on nobody should ever write to it
+    asan_mark_memory_region((uintptr_t)buff->area, buff->area_size, ASAN_TAG_SLAB_FREED);
     desc->length = buff->data_size;
     desc->cmd = TXD_COMMAND_EOP | TXD_COMMAND_IFCS | TXD_COMMAND_RS;
     tx_wr = (tx_wr + 1) % NUM_TX_DESC;

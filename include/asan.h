@@ -17,12 +17,16 @@
 
 #ifdef CONFIG_ASAN
 
+#define ASAN_REDZONE_SIZE 1
+
 void asan_enable_reporting(void);
 uintptr_t asan_init_shadow(uintptr_t max_addr);
 // tag parameter on of the ASAN_TAG_* values
 void asan_mark_memory_region(uintptr_t start, size_t size, uint8_t tag);
 
 #else
+
+#define ASAN_REDZONE_SIZE 0
 
 static inline void asan_enable_reporting(void) {}
 static inline void asan_mark_memory_region(UNUSED uintptr_t start, UNUSED size_t size, UNUSED uint8_t tag) {}
