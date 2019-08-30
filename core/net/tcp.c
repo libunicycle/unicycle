@@ -182,6 +182,7 @@ void tcp_receive(struct ip4if *ip4if, ip4addr_t src_ip, buffer_t *buff) {
         }
 
         bool consumed = false;
+        uint16_t tcp_flags = hdr->flags;
         // XXX: process incoming data segments only if state is ESTABLISHED/FIN_WAIT_1/FIN_WAIT_2
         if (buff->data_size > HDR_LEN_TCP) {
             // Send ACK for received data
@@ -190,11 +191,13 @@ void tcp_receive(struct ip4if *ip4if, ip4addr_t src_ip, buffer_t *buff) {
             // buffer_t *out = buffer_allocate(BUFFER_NET_SIZE, HDR_LEN_TCP);
             // tcp_send(conn, out);
 
+            // Note that 'buff' is freed inside the client receiver so any data associated with 'buff' (like hdr) is invalid after this
+            // point.
             conn->ops->receive(conn, buff);
             consumed = true;
         }
 
-        if (hdr->flags & TCP_FLAG_FIN) {
+        if (tcp_flags & TCP_FLAG_FIN) {
             conn->remote_seq++;
 
             // send ACK for the received FIN
