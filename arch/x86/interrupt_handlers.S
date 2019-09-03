@@ -61,9 +61,9 @@ irq_handlers:
 
     cli # we serialize IRQ handlers and mask all interruptsion until we process the current IRQ
 #ifdef CONFIG_SMP
-    movq $i, %fs:irq_ready_num@tpoff
+    movb $i, %fs:irq_ready_num@tpoff
 #else
-    movq $i, irq_ready_num
+    movb $i, irq_ready_num
 #endif
     # Acknowledge APIC interruption here
     # It is a bit fuzzy when this ack should be called, Intel docs mentions that it should be done before IRET
