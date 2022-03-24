@@ -13,17 +13,17 @@ endchoice
 config X2APIC
     bool "x2APIC support"
     def_bool y
-    ---help---
-    x2APIC is newer version of Advanced Programmable Interrupt Controller (APIC)
-    introduced with Intel's Nahalem architecture.
+    help
+        x2APIC is newer version of Advanced Programmable Interrupt Controller (APIC)
+        introduced with Intel's Nahalem architecture.
 
-    Choose 'N' if you want to use legacy APIC functionality.
+        Choose 'N' if you want to use legacy APIC functionality.
 
 config INTEL_MICROCODE
     bool "Intel microcode support"
     def_bool y
-    ---help---
-    Load Intel microcode at boot time
+    help
+        Load Intel microcode at boot time
 
 choice
     prompt "ACPI adapter implementation"
@@ -31,13 +31,13 @@ choice
 
 config ACPI_INHOUSE
     bool "In-house"
-    ---help---
-    A simple in-house adapter
+    help
+        A simple in-house adapter
 
 config ACPI_ACPICA
     bool "ACPICA based"
-    ---help---
-    ACPI adapter based on ACPICA library
+    help
+        ACPI adapter based on ACPICA library
 
 endchoice
 
