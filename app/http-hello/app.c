@@ -117,7 +117,7 @@ static void blk_op_complete(UNUSED struct blk_device *blk, void *data, enum blk_
 size_t counter = 0;
 
 static void timer_fire(UNUSED void *data) {
-    struct rtc_date date;
+    struct rtc_date date = {};
     rtc_read(&date);
 
     printf("Hello from timer #%ld. Today's date is %d-%d-%d %d-%d-%d\n", (uint64_t)data, date.year, date.month, date.day, date.hours,
