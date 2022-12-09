@@ -5,7 +5,7 @@
 #include "x86.h"
 
 #define REG_RTC_INDEX 0x70
-#define REG_rtc_date 0x71
+#define REG_RTC_DATE 0x71
 
 #define REG_SECONDS 0
 #define REG_SECONDS_ALARM 1
@@ -33,7 +33,7 @@ static uint8_t from_bcd(uint8_t data) { return (data >> 4) * 10 + (data & 0xf); 
 
 static uint8_t rtc_reg_read_raw(uint8_t reg) {
     outb(REG_RTC_INDEX, reg);
-    return inb(REG_rtc_date);
+    return inb(REG_RTC_DATE);
 }
 
 static uint8_t rtc_reg_read(uint8_t reg, bool is_binary) {
