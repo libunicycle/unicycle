@@ -16,6 +16,7 @@ register_rule(GenConfig)
 
 @rule[:cc].cflags << "-g -ggdb -flto -nostdlib -ffreestanding -std=c11 -fno-stack-protector -mno-red-zone -fno-math-errno -fno-trapping-math -fno-common -fno-PIC -fno-PIE -static -W -Wall -Wextra -O3"
 @rule[:cc].cflags << (@config[:FRAME_POINTER] ? "-fno-omit-frame-pointer" : "-fomit-frame-pointer")
+@rule[:cc].cflags << "-Wno-scalar-storage-order"
 
 # For now compile for current CPU. Later we should have a config file option that specifies what Arch/Tune we are targeting for.
 @rule[:cc].cflags << "-mtune=native"
