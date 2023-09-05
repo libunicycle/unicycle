@@ -217,7 +217,7 @@ uint16_t checksum_calculate(void *payload, uint16_t length, uint16_t proto, ip4a
         uint16_t length;
     };
 
-    struct pseudo_hdr pseudo_hdr;
+    struct pseudo_hdr pseudo_hdr = {};
     pseudo_hdr.src = src;
     pseudo_hdr.dest = dest;
     pseudo_hdr.length = length;

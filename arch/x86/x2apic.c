@@ -54,7 +54,7 @@ static void apic_timer_handler(UNUSED void *data) {
     apic_interrupt_ack();
 }
 
-static void apic_timer_setup(void) {
+UNUSED static void apic_timer_setup(void) {
     uint32_t eax, unused;
     x86_cpuid(CPUID_THERMAL_N_POWER, &eax, &unused, &unused, &unused);
     if (!(eax & BIT(2))) {

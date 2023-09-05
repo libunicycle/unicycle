@@ -14,7 +14,7 @@ register_rule(GenConfig)
 @rule[:ld].bin = @rule[:cc].bin
 @rule[:objcopy].bin = @config[:TOOLCHAIN_PATH] + "objcopy"
 
-@rule[:cc].cflags << "-g -ggdb -flto -nostdlib -ffreestanding -std=c11 -fno-stack-protector -mno-red-zone -fno-math-errno -fno-trapping-math -fno-common -fno-PIC -fno-PIE -static -W -Wall -Wextra -O3"
+@rule[:cc].cflags << "-g -ggdb -flto=auto -nostdlib -ffreestanding -std=c11 -fno-stack-protector -mno-red-zone -fno-math-errno -fno-trapping-math -fno-common -fno-PIC -fno-PIE -static -W -Wall -Wextra -O3"
 @rule[:cc].cflags << (@config[:FRAME_POINTER] ? "-fno-omit-frame-pointer" : "-fomit-frame-pointer")
 @rule[:cc].cflags << "-Wno-scalar-storage-order"
 
